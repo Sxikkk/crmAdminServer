@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+*.log
+
+# Project exclude paths
+/web/vite.config.d.ts
+/web/vite.config.js
