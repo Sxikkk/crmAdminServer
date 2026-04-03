@@ -1,10 +1,10 @@
 import type { FastifyInstance } from "fastify";
 import type { PoolClient } from "pg";
-import { adminPool, mainPool } from "../db/pools.js";
-import { requireAuth } from "../plugins/auth.js";
+import { adminPool } from "../db/pools.js";
+import { requireRole } from "../plugins/auth.js";
 import { createRequestSchema, rejectSchema, requestFilterSchema } from "../schemas.js";
 import { sendEmail } from "../services/mailer.js";
-import { createOrganizationOnMainCrm } from "../services/main-crm.js";
+import { createOrganizationOnMainCrm, existsOrganizationOnMainCrm } from "../services/main-crm.js";
 
 async function addRequestEvent(
   client: PoolClient,
@@ -32,17 +32,8 @@ export async function requestRoutes(app: FastifyInstance): Promise<void> {
     const data = parsed.data;
 
     if (data.inn || data.ogrn) {
-      const dupMain = await mainPool.query(
-        `
-          SELECT 1
-          FROM "Organizations"
-          WHERE ($1::text IS NOT NULL AND "Inn" = $1)
-             OR ($2::text IS NOT NULL AND "Ogrn" = $2)
-          LIMIT 1
-        `,
-        [data.inn ?? null, data.ogrn ?? null]
-      );
-      if ((dupMain.rowCount ?? 0) > 0) {
+      const existsOnMainCrm = await existsOrganizationOnMainCrm(data.inn ?? null, data.ogrn ?? null, null);
+      if (existsOnMainCrm) {
         return reply.code(409).send({ message: "Organization with same INN/OGRN already exists in main CRM" });
       }
     }
@@ -106,7 +97,7 @@ export async function requestRoutes(app: FastifyInstance): Promise<void> {
     return reply.code(201).send(requestRow);
   });
 
-  app.get("/requests", { preHandler: requireAuth }, async (request, reply) => {
+  app.get("/requests", { preHandler: requireRole("admin", "manager", "reviewer") }, async (request, reply) => {
     const parsed = requestFilterSchema.safeParse(request.query);
     if (!parsed.success) {
       return reply.code(400).send({ message: "Validation error", issues: parsed.error.issues });
@@ -143,7 +134,7 @@ export async function requestRoutes(app: FastifyInstance): Promise<void> {
     });
   });
 
-  app.get("/requests/:id", { preHandler: requireAuth }, async (request, reply) => {
+  app.get("/requests/:id", { preHandler: requireRole("admin", "manager", "reviewer") }, async (request, reply) => {
     const params = request.params as { id: string };
     const result = await adminPool.query("SELECT * FROM organization_requests WHERE id = $1", [params.id]);
     if (result.rowCount === 0) {
@@ -158,7 +149,7 @@ export async function requestRoutes(app: FastifyInstance): Promise<void> {
     return reply.send({ request: result.rows[0], events: events.rows });
   });
 
-  app.post("/requests/:id/approve", { preHandler: requireAuth }, async (request, reply) => {
+  app.post("/requests/:id/approve", { preHandler: requireRole("admin", "manager") }, async (request, reply) => {
     const params = request.params as { id: string };
     const actorUserId = request.user?.userId ?? null;
     const client = await adminPool.connect();
@@ -209,7 +200,7 @@ export async function requestRoutes(app: FastifyInstance): Promise<void> {
           email: row.email,
           phone: row.phone,
           website: row.website
-        });
+        }, actorUserId);
       } catch (error: unknown) {
         await client.query(
           `
@@ -277,7 +268,7 @@ export async function requestRoutes(app: FastifyInstance): Promise<void> {
     }
   });
 
-  app.post("/requests/:id/reject", { preHandler: requireAuth }, async (request, reply) => {
+  app.post("/requests/:id/reject", { preHandler: requireRole("admin", "manager") }, async (request, reply) => {
     const params = request.params as { id: string };
     const actorUserId = request.user?.userId ?? null;
 

@@ -3,6 +3,8 @@ import { adminPool } from "../db/pools.js";
 import { hashPassword, signToken, verifyPassword } from "../lib/security.js";
 import { loginSchema, registerSchema } from "../schemas.js";
 import { env } from "../config/env.js";
+import {ensureActiveServiceKeyForAdminUser} from "../services/service-keys.js";
+import {createHash} from "node:crypto";
 
 export async function authRoutes(app: FastifyInstance): Promise<void> {
   app.post("/auth/register", async (request, reply) => {
@@ -73,9 +75,45 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       role: user.role
     });
 
+    try {
+      await ensureActiveServiceKeyForAdminUser(user.id);
+    } catch (error: unknown) {
+      app.log.warn({ error, userId: user.id }, "Failed to ensure service key for admin user");
+    }
+
     return reply.send({
       accessToken: token,
       user: { id: user.id, username: user.username, email: user.email, role: user.role }
     });
+  });
+
+  app.post("/check-key", async (request, reply) => {
+    const key = request.headers["x-admin-key"] as string;
+
+    if (!key) {
+      return reply.code(401).send({ message: "x-admin-key is missing" });
+    }
+
+    const keyHash = createHash("sha256").update(key).digest("hex");
+
+    const result = await adminPool.query(
+        `
+        SELECT au.id as user_id, au.username, au.role
+        FROM service_keys sk
+        JOIN admin_users au ON au.id = sk.admin_user_id
+        WHERE sk.key_hash = $1 
+          AND (sk.expires_at IS NULL OR sk.expires_at > NOW())
+          AND sk.revoked_at IS NULL
+          AND LOWER(au.role) IN ('admin', 'manager')
+        LIMIT 1
+      `,
+        [keyHash]
+    );
+
+    if (result.rowCount === 0) {
+      return reply.code(401).send({ message: "Invalid or expired service key" });
+    }
+
+    return reply.send(result.rows[0]);
   });
 }

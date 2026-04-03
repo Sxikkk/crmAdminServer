@@ -1,11 +1,13 @@
 import { z } from "zod";
 import { organizationStatuses, organizationTypes, requestStatuses } from "./types.js";
 
+export const adminRoles = ["admin", "manager", "reviewer"] as const;
+
 export const registerSchema = z.object({
   username: z.string().min(3).max(50),
   email: z.string().email().max(256),
   password: z.string().min(8).max(100),
-  role: z.string().max(50).default("reviewer")
+  role: z.enum(adminRoles).default("reviewer")
 });
 
 export const loginSchema = z.object({
