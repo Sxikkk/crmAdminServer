@@ -1,4 +1,4 @@
-import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
+﻿import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
 import { Button, Card, Col, Input, List, Row, Select, Space, Tag, Typography, message } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { approveRequest, getRequestById, getRequests, rejectRequest } from "../../api";
@@ -7,6 +7,18 @@ import type { OrganizationRequest, RequestDetails, RequestStatus } from "../../t
 import { getErrorMessage } from "../../shared/errors";
 
 const statuses: Array<RequestStatus | "ALL"> = ["ALL", "PENDING", "APPROVED", "REJECTED", "FAILED"];
+const statusLabels: Record<RequestStatus | "ALL", string> = {
+  ALL: "Все",
+  PENDING: "В ожидании",
+  APPROVED: "Одобрена",
+  REJECTED: "Отклонена",
+  FAILED: "Ошибка"
+};
+const organizationTypeLabels: Record<"Company" | "Individual" | "Other", string> = {
+  Company: "Компания",
+  Individual: "ИП",
+  Other: "Другое"
+};
 
 export function StaffRequestsPage() {
   const { token, role } = useAuth();
@@ -71,7 +83,7 @@ export function StaffRequestsPage() {
 
     try {
       await approveRequest(token, selectedRequest.id);
-      messageApi.success("Request approved");
+      messageApi.success("Заявка одобрена");
       await loadRequests(requestFilter);
       await loadRequestDetails(selectedRequest.id);
     } catch (error: unknown) {
@@ -82,14 +94,14 @@ export function StaffRequestsPage() {
   async function handleReject() {
     if (!token || !selectedRequest) return;
     if (!rejectComment.trim()) {
-      messageApi.error("Reject reason is required");
+      messageApi.error("Укажите причину отклонения");
       return;
     }
 
     try {
       await rejectRequest(token, selectedRequest.id, rejectComment.trim());
       setRejectComment("");
-      messageApi.success("Request rejected");
+      messageApi.success("Заявка отклонена");
       await loadRequests(requestFilter);
       await loadRequestDetails(selectedRequest.id);
     } catch (error: unknown) {
@@ -103,13 +115,13 @@ export function StaffRequestsPage() {
       <Row gutter={16}>
         <Col xs={24} lg={9}>
           <Card
-            title="Requests"
+            title="Заявки"
             extra={
               <Select
                 value={requestFilter}
                 style={{ width: 150 }}
                 onChange={(value) => setRequestFilter(value)}
-                options={statuses.map((status) => ({ value: status, label: status }))}
+                options={statuses.map((status) => ({ value: status, label: statusLabels[status] }))}
               />
             }
           >
@@ -126,7 +138,7 @@ export function StaffRequestsPage() {
                     description={
                       <Space direction="vertical" size={0}>
                         <Typography.Text type="secondary">{new Date(item.created_at).toLocaleString()}</Typography.Text>
-                        <Tag>{item.status}</Tag>
+                        <Tag>{statusLabels[item.status]}</Tag>
                       </Space>
                     }
                   />
@@ -136,43 +148,43 @@ export function StaffRequestsPage() {
           </Card>
         </Col>
         <Col xs={24} lg={15}>
-          <Card title={requestDetails?.request.organization_name ?? "Request Details"}>
-            {!requestDetails && <Typography.Text type="secondary">Select request</Typography.Text>}
+          <Card title={requestDetails?.request.organization_name ?? "Детали заявки"}>
+            {!requestDetails && <Typography.Text type="secondary">Выберите заявку</Typography.Text>}
             {requestDetails && (
               <Space direction="vertical" size={16} style={{ width: "100%" }}>
                 <Row gutter={12}>
-                  <Col span={12}>Type: {requestDetails.request.organization_type}</Col>
+                  <Col span={12}>Тип: {organizationTypeLabels[requestDetails.request.organization_type]}</Col>
                   <Col span={12}>INN: {requestDetails.request.inn ?? "-"}</Col>
                   <Col span={12}>OGRN: {requestDetails.request.ogrn ?? "-"}</Col>
                   <Col span={12}>Email: {requestDetails.request.email ?? "-"}</Col>
-                  <Col span={12}>Requester: {requestDetails.request.requested_by_email}</Col>
-                  <Col span={12}>Status: {requestDetails.request.status}</Col>
+                  <Col span={12}>Заявитель: {requestDetails.request.requested_by_email}</Col>
+                  <Col span={12}>Статус: {statusLabels[requestDetails.request.status]}</Col>
                 </Row>
 
                 {requestDetails.request.status === "PENDING" && role !== "reviewer" && (
                   <Space wrap>
                     <Button type="primary" icon={<CheckOutlined />} onClick={handleApprove}>
-                      Approve
+                      Одобрить
                     </Button>
                     <Input
                       style={{ width: 280 }}
-                      placeholder="Reject reason"
+                      placeholder="Причина отклонения"
                       value={rejectComment}
                       onChange={(event) => setRejectComment(event.target.value)}
                     />
                     <Button danger icon={<CloseOutlined />} onClick={handleReject}>
-                      Reject
+                      Отклонить
                     </Button>
                   </Space>
                 )}
 
-                <Typography.Title level={5}>Events</Typography.Title>
+                <Typography.Title level={5}>События</Typography.Title>
                 <List
                   dataSource={requestDetails.events}
                   renderItem={(event) => (
                     <List.Item>
                       <List.Item.Meta
-                        title={`${event.event_type} • ${new Date(event.created_at).toLocaleString()}`}
+                        title={`${event.event_type} - ${new Date(event.created_at).toLocaleString()}`}
                         description={event.message}
                       />
                     </List.Item>
@@ -186,3 +198,4 @@ export function StaffRequestsPage() {
     </div>
   );
 }
+

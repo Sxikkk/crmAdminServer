@@ -7,6 +7,15 @@ import type { MainOrganization, OrganizationStatus, OrganizationType } from "../
 
 const organizationTypes: OrganizationType[] = ["Company", "Individual", "Other"];
 const organizationStatuses: OrganizationStatus[] = ["Active", "Blocked"];
+const organizationTypeLabels: Record<OrganizationType, string> = {
+  Company: "Компания",
+  Individual: "ИП",
+  Other: "Другое"
+};
+const organizationStatusLabels: Record<OrganizationStatus, string> = {
+  Active: "Активна",
+  Blocked: "Заблокирована"
+};
 
 export function StaffOrganizationsPage() {
   const { token } = useAuth();
@@ -35,7 +44,7 @@ export function StaffOrganizationsPage() {
     try {
       await updateOrganizationType(token, item.id, nextType);
       await loadOrganizations(search);
-      messageApi.success("Type updated");
+      messageApi.success("Тип обновлён");
     } catch (error: unknown) {
       messageApi.error(getErrorMessage(error));
     }
@@ -47,7 +56,7 @@ export function StaffOrganizationsPage() {
     try {
       await updateOrganizationStatus(token, item.id, nextStatus);
       await loadOrganizations(search);
-      messageApi.success("Status updated");
+      messageApi.success("Статус обновлён");
     } catch (error: unknown) {
       messageApi.error(getErrorMessage(error));
     }
@@ -61,17 +70,17 @@ export function StaffOrganizationsPage() {
     <div className="staff-page">
       {contextHolder}
       <Card
-        title="Organizations"
+        title="Организации"
         extra={
           <Space>
             <Input.Search
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               onSearch={(value) => loadOrganizations(value)}
-              placeholder="Search by name / INN / OGRN"
+              placeholder="Поиск по названию / INN / OGRN"
               allowClear
             />
-            <Button onClick={() => loadOrganizations(search)}>Refresh</Button>
+            <Button onClick={() => loadOrganizations(search)}>Обновить</Button>
           </Space>
         }
       >
@@ -81,31 +90,31 @@ export function StaffOrganizationsPage() {
           dataSource={items}
           pagination={{ pageSize: 15 }}
           columns={[
-            { title: "Name", dataIndex: "name", key: "name" },
+            { title: "Название", dataIndex: "name", key: "name" },
             { title: "INN", dataIndex: "inn", key: "inn", render: (value: string | null) => value ?? "-" },
             { title: "OGRN", dataIndex: "ogrn", key: "ogrn", render: (value: string | null) => value ?? "-" },
             {
-              title: "Type",
+              title: "Тип",
               key: "type",
               render: (_, item) => (
                 <Select
                   value={item.type}
                   style={{ width: 130 }}
-                  options={organizationTypes.map((type) => ({ value: type, label: type }))}
+                  options={organizationTypes.map((type) => ({ value: type, label: organizationTypeLabels[type] }))}
                   onChange={(nextType) => changeType(item, nextType)}
                 />
               )
             },
             {
-              title: "Status",
+              title: "Статус",
               key: "status",
               render: (_, item) => (
                 <Space>
-                  <Tag color={item.status === "Active" ? "green" : "volcano"}>{item.status}</Tag>
+                  <Tag color={item.status === "Active" ? "green" : "volcano"}>{organizationStatusLabels[item.status]}</Tag>
                   <Select
                     value={item.status}
                     style={{ width: 130 }}
-                    options={organizationStatuses.map((status) => ({ value: status, label: status }))}
+                    options={organizationStatuses.map((status) => ({ value: status, label: organizationStatusLabels[status] }))}
                     onChange={(nextStatus) => changeStatus(item, nextStatus)}
                   />
                 </Space>

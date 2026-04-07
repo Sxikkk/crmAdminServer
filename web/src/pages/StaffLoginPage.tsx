@@ -25,7 +25,7 @@ export function StaffLoginPage() {
     try {
       const auth = await login(values.username, values.password);
       loginByToken(auth.accessToken);
-      messageApi.success(`Logged in as ${auth.user.username}`);
+      messageApi.success(`Вход выполнен: ${auth.user.username}`);
       navigate("/staff/requests", { replace: true });
     } catch (error: unknown) {
       messageApi.error(getErrorMessage(error));
@@ -37,16 +37,16 @@ export function StaffLoginPage() {
       {contextHolder}
       <Card className="auth-card">
         <Space direction="vertical" size={16} style={{ width: "100%" }}>
-          <Typography.Title level={3}>Staff Login</Typography.Title>
+          <Typography.Title level={3}>Вход для сотрудников</Typography.Title>
           <Form<LoginForm> layout="vertical" onFinish={onFinish}>
-            <Form.Item name="username" label="Username" rules={[{ required: true }]}>
+            <Form.Item name="username" label="Логин" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
-            <Form.Item name="password" label="Password" rules={[{ required: true }]}>
+            <Form.Item name="password" label="Пароль" rules={[{ required: true }]}>
               <Input.Password />
             </Form.Item>
             <Button type="primary" htmlType="submit">
-              Login
+              Войти
             </Button>
           </Form>
         </Space>

@@ -11,6 +11,10 @@ body {
   background: linear-gradient(140deg, #f4f7f5 0%, #eef3ff 100%);
 }
 
+body[data-theme="dark"] {
+  background: linear-gradient(140deg, #12181b 0%, #0f1420 100%);
+}
+
 .main-layout {
   min-height: 100vh;
 }
@@ -25,6 +29,10 @@ body {
   top: 0;
   z-index: 10;
   padding-inline: 24px;
+}
+
+body[data-theme="dark"] .main-header {
+  border-bottom-color: #25303a;
 }
 
 .main-logo,
@@ -58,6 +66,10 @@ body {
   border-right: 1px solid #eef1f4;
 }
 
+body[data-theme="dark"] .staff-sider {
+  border-right-color: #25303a;
+}
+
 .staff-brand {
   height: 64px;
   display: flex;
@@ -76,12 +88,20 @@ body {
   padding-inline: 20px;
 }
 
+body[data-theme="dark"] .staff-header {
+  border-bottom-color: #25303a;
+}
+
 .staff-content {
   padding: 20px;
 }
 
 .selected-list-item {
   background: #f5fffa;
+}
+
+body[data-theme="dark"] .selected-list-item {
+  background: #10211b;
 }
 
 @media (max-width: 992px) {

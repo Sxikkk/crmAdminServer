@@ -16,6 +16,11 @@ type PublicRequestForm = {
 };
 
 const organizationTypes: OrganizationType[] = ["Company", "Individual", "Other"];
+const organizationTypeLabels: Record<OrganizationType, string> = {
+  Company: "Компания",
+  Individual: "ИП",
+  Other: "Другое"
+};
 
 export function PublicRequestPage() {
   const [form] = Form.useForm<PublicRequestForm>();
@@ -33,7 +38,7 @@ export function PublicRequestPage() {
         city: values.city || undefined
       });
       form.resetFields();
-      messageApi.success("Request sent");
+      messageApi.success("Заявка отправлена");
     } catch (error: unknown) {
       messageApi.error(getErrorMessage(error));
     }
@@ -44,16 +49,16 @@ export function PublicRequestPage() {
       {contextHolder}
       <Card className="page-card">
         <Space direction="vertical" size={20} style={{ width: "100%" }}>
-          <Typography.Title level={3}>Organization Request</Typography.Title>
+          <Typography.Title level={3}>Заявка на организацию</Typography.Title>
           <Typography.Text type="secondary">
-            Create a request for organization onboarding. Staff will review and approve it.
+            Создайте заявку на подключение организации. Сотрудники проверят её и примут решение.
           </Typography.Text>
           <Form layout="vertical" form={form} onFinish={onSubmit} initialValues={{ organizationType: "Company" }}>
-            <Form.Item name="organizationName" label="Organization Name" rules={[{ required: true }]}>
-              <Input placeholder="Example LLC" />
+            <Form.Item name="organizationName" label="Название организации" rules={[{ required: true }]}>
+              <Input placeholder="Например, ООО Ромашка" />
             </Form.Item>
-            <Form.Item name="organizationType" label="Organization Type" rules={[{ required: true }]}>
-              <Select options={organizationTypes.map((type) => ({ value: type, label: type }))} />
+            <Form.Item name="organizationType" label="Тип организации" rules={[{ required: true }]}>
+              <Select options={organizationTypes.map((type) => ({ value: type, label: organizationTypeLabels[type] }))} />
             </Form.Item>
             <Form.Item name="inn" label="INN">
               <Input />
@@ -61,23 +66,23 @@ export function PublicRequestPage() {
             <Form.Item name="ogrn" label="OGRN">
               <Input />
             </Form.Item>
-            <Form.Item name="email" label="Organization Email">
+            <Form.Item name="email" label="Email организации">
               <Input type="email" />
             </Form.Item>
-            <Form.Item name="phone" label="Phone">
+            <Form.Item name="phone" label="Телефон">
               <Input />
             </Form.Item>
-            <Form.Item name="website" label="Website">
+            <Form.Item name="website" label="Сайт">
               <Input />
             </Form.Item>
-            <Form.Item name="city" label="City">
+            <Form.Item name="city" label="Город">
               <Input />
             </Form.Item>
-            <Form.Item name="requestedByEmail" label="Requester Email" rules={[{ required: true, type: "email" }]}>
+            <Form.Item name="requestedByEmail" label="Email заявителя" rules={[{ required: true, type: "email" }]}>
               <Input type="email" />
             </Form.Item>
             <Button type="primary" htmlType="submit">
-              Send Request
+              Отправить заявку
             </Button>
           </Form>
         </Space>
